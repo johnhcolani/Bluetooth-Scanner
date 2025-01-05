@@ -94,36 +94,42 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Bluetooth Devices")),
+      appBar: AppBar(
+        title: const Text("Bluetooth Devices"),
+        actions: [
+          Icon(
+            Icons.bluetooth,
+            size: 40,
+            color: _connectedDevice != null ? Colors.blue : Colors.grey,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Row for Bluetooth Icon, Scanning Button, and Navigate Button
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: _connectedDevice == null
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.spaceBetween,
               children: [
-                // Bluetooth Icon
-                Icon(
-                  Icons.bluetooth,
-                  size: 40,
-                  color: _connectedDevice != null ? Colors.blue : Colors.grey,
-                ),
-                // Start/Stop Scanning Button
+
                 ElevatedButton(
                   onPressed: _isScanning ? _stopScan : _startScan,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isScanning ? Colors.red : Colors.green,
+                    backgroundColor: _isScanning ? Colors.red.shade400 : Colors.green.shade400,
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   ),
                   child: Text(
                     _isScanning ? "Stop Scanning" : "Start Scanning",
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16,
+                    color: _isScanning ? Colors.white : Colors.white
+                    ),
                   ),
                 ),
-                // Navigate to Details Button (Visible if connected)
                 if (_connectedDevice != null)
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -133,13 +139,11 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
                         ),
                       );
                     },
+                    icon: Icon(Icons.bluetooth_connected,color: Colors.grey.shade100,),
+                    label: const Text("Go to Connected",style: TextStyle(color: Colors.white),),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                    child: const Text(
-                      "Go to Details",
-                      style: TextStyle(fontSize: 16),
                     ),
                   ),
               ],
@@ -161,15 +165,21 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
                     child: ListTile(
                       title: Text(device.name.isEmpty ? "Unknown Device" : device.name),
                       subtitle: Text(device.id),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          if (isConnected) {
-                            _disconnectFromDevice();
-                          } else {
-                            _connectToDevice(context, device);
-                          }
-                        },
-                        child: Text(isConnected ? "Disconnect" : "Connect"),
+                      trailing: ElevatedButton.icon(
+                        onPressed: isConnected
+                            ? null // Disable the button when connected
+                            : () => _connectToDevice(context, device),
+                        icon: Icon(
+                          Icons.bluetooth,
+                          color: isConnected ? Colors.blue : Colors.grey[600],
+                        ),
+                        label: Text(
+                          isConnected ? "Connected" : "Connect",
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                          isConnected ? Colors.blue.shade900 : Colors.grey.shade300, // Adjusted colors
+                        ),
                       ),
                     ),
                   );
