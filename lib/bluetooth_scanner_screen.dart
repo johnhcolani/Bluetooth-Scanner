@@ -1,95 +1,12 @@
-import 'dart:async';
-
+import 'package:bluetooth_detector/presentation/bloc/bluetooth_bloc.dart';
+import 'package:bluetooth_detector/presentation/bloc/bluetooth_event.dart';
+import 'package:bluetooth_detector/presentation/bloc/bluetooyh_state.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'device_detail_page.dart';
 
-class BluetoothScannerScreen extends StatefulWidget {
+class BluetoothScannerScreen extends StatelessWidget {
   const BluetoothScannerScreen({Key? key}) : super(key: key);
-
-  @override
-  _BluetoothScannerScreenState createState() => _BluetoothScannerScreenState();
-}
-
-class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
-  final FlutterReactiveBle _ble = FlutterReactiveBle();
-  final List<DiscoveredDevice> _devices = [];
-  StreamSubscription? _scanSubscription;
-  bool _isScanning = false;
-  String _connectedDeviceId = '';
-  DiscoveredDevice? _connectedDevice;
-
-  @override
-  void dispose() {
-    _scanSubscription?.cancel();
-    super.dispose();
-  }
-
-  void _startScan() {
-    setState(() {
-      _isScanning = true;
-      _devices.clear(); // Clear the list for new devices, but keep connected device
-      if (_connectedDevice != null) {
-        _devices.add(_connectedDevice!); // Preserve connected device
-      }
-    });
-    _scanSubscription = _ble.scanForDevices(withServices: []).listen((device) {
-      if (!_devices.any((d) => d.id == device.id)) {
-        setState(() {
-          _devices.add(device);
-        });
-      }
-    }, onError: (error) {
-      print("Scan error: $error");
-      setState(() {
-        _isScanning = false;
-      });
-    });
-  }
-
-  void _stopScan() {
-    _scanSubscription?.cancel();
-    setState(() {
-      _isScanning = false;
-    });
-  }
-
-  Future<void> _refreshDevices() async {
-    _stopScan();
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    _startScan();
-
-    await Future.delayed(const Duration(seconds: 2));
-  }
-
-  void _connectToDevice(BuildContext context, DiscoveredDevice device) {
-    _ble.connectToDevice(id: device.id).listen((connectionState) {
-      setState(() {
-        if (connectionState.connectionState == DeviceConnectionState.connected) {
-          _connectedDeviceId = device.id;
-          _connectedDevice = device; // Save the connected device
-        } else if (connectionState.connectionState == DeviceConnectionState.disconnected) {
-          _connectedDeviceId = '';
-          _connectedDevice = null; // Clear the connected device
-        }
-      });
-    }, onError: (error) {
-      print("Connection error: $error");
-    });
-  }
-
-  void _disconnectFromDevice() {
-    if (_connectedDeviceId.isNotEmpty) {
-      _ble.deinitialize();
-      setState(() {
-        _connectedDeviceId = '';
-        _connectedDevice = null; // Clear the connected device
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,94 +14,121 @@ class _BluetoothScannerScreenState extends State<BluetoothScannerScreen> {
       appBar: AppBar(
         title: const Text("Bluetooth Devices"),
         actions: [
-          Icon(
-            Icons.bluetooth,
-            size: 40,
-            color: _connectedDevice != null ? Colors.blue : Colors.grey,
+          BlocBuilder<BluetoothBloc, BluetoothState>(
+            builder: (context, state) {
+              return Icon(
+                Icons.bluetooth,
+                size: 40,
+                color: state.connectedDevice != null ? Colors.blue : Colors.grey,
+              );
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          // Row for Bluetooth Icon, Scanning Button, and Navigate Button
+          // Scanning and Connected Device Buttons
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
-              mainAxisAlignment: _connectedDevice == null
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.spaceBetween,
+              spacing: 16,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
-                ElevatedButton(
-                  onPressed: _isScanning ? _stopScan : _startScan,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isScanning ? Colors.red.shade400 : Colors.green.shade400,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  ),
-                  child: Text(
-                    _isScanning ? "Stop Scanning" : "Start Scanning",
-                    style: TextStyle(fontSize: 16,
-                    color: _isScanning ? Colors.white : Colors.white
-                    ),
-                  ),
+                BlocBuilder<BluetoothBloc, BluetoothState>(
+                  builder: (context, state) {
+                    return ElevatedButton(
+                      onPressed: state.isScanning
+                          ? () => context.read<BluetoothBloc>().add(StopScanEvent())
+                          : () => context.read<BluetoothBloc>().add(StartScanEvent()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: state.isScanning
+                            ? Colors.red.shade400
+                            : Colors.green.shade400,
+                      ),
+                      child: Text(
+                        state.isScanning ? "Stop Scanning" : "Start Scanning",
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  },
                 ),
-                if (_connectedDevice != null)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              DeviceDetailsPage(device: _connectedDevice!, disconnectCallback: _disconnectFromDevice),
+                BlocBuilder<BluetoothBloc, BluetoothState>(
+                  builder: (context, state) {
+                    if (state.connectedDevice != null) {
+                      return ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceDetailsPage(
+                                device: state.connectedDevice!,
+                                disconnectCallback: () {
+                                  context.read<BluetoothBloc>().add(DisconnectDeviceEvent());
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bluetooth_connected, color: Colors.white),
+                        label: const Text(
+                          "Go to Connected",
+                          style: TextStyle(color: Colors.white),
                         ),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                       );
-                    },
-                    icon: Icon(Icons.bluetooth_connected,color: Colors.grey.shade100,),
-                    label: const Text("Go to Connected",style: TextStyle(color: Colors.white),),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    ),
-                  ),
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               ],
             ),
           ),
-          // Device List with Pull-to-Refresh
+          // Device List
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshDevices,
-              child: _devices.isEmpty
-                  ? const Center(child: Text("No devices found."))
-                  : ListView.builder(
-                itemCount: _devices.length,
-                itemBuilder: (context, index) {
-                  final device = _devices[index];
-                  final isConnected = _connectedDeviceId == device.id;
+            child: BlocBuilder<BluetoothBloc, BluetoothState>(
+              builder: (context, state) {
+                if (state.devices.isEmpty) {
+                  return const Center(child: Text("No devices found."));
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<BluetoothBloc>().add(StopScanEvent());
+                    await Future.delayed(const Duration(milliseconds: 500));
+                    context.read<BluetoothBloc>().add(StartScanEvent());
+                  },
+                  child: ListView.builder(
+                    itemCount: state.devices.length,
+                    itemBuilder: (context, index) {
+                      final device = state.devices[index];
+                      final isConnected = state.connectedDevice?.id == device.id;
 
-                  return Card(
-                    child: ListTile(
-                      title: Text(device.name.isEmpty ? "Unknown Device" : device.name),
-                      subtitle: Text(device.id),
-                      trailing: ElevatedButton.icon(
-                        onPressed: isConnected
-                            ? null // Disable the button when connected
-                            : () => _connectToDevice(context, device),
-                        icon: Icon(
-                          Icons.bluetooth,
-                          color: isConnected ? Colors.blue : Colors.grey[600],
+                      return Card(
+                        child: ListTile(
+                          title: Text(device.name.isEmpty ? "Unknown Device" : device.name),
+                          subtitle: Text(device.id),
+                          trailing: ElevatedButton.icon(
+                            onPressed: isConnected
+                                ? null
+                                : () => context
+                                .read<BluetoothBloc>()
+                                .add(ConnectToDeviceEvent(device)),
+                            icon: Icon(
+                              Icons.bluetooth,
+                              color: isConnected ? Colors.blue : Colors.grey[600],
+                            ),
+                            label: Text(isConnected ? "Connected" : "Connect"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isConnected
+                                  ? Colors.blue.shade900
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
                         ),
-                        label: Text(
-                          isConnected ? "Connected" : "Connect",
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                          isConnected ? Colors.blue.shade900 : Colors.grey.shade300, // Adjusted colors
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],

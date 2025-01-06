@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import '../../domain/entities/device_entity.dart';
 
 class DeviceDetailsPage extends StatelessWidget {
-  final DiscoveredDevice device;
+  final DeviceEntity device;
   final VoidCallback disconnectCallback;
 
-  const DeviceDetailsPage({Key? key, required this.device, required this.disconnectCallback}) : super(key: key);
+  const DeviceDetailsPage({
+    Key? key,
+    required this.device,
+    required this.disconnectCallback,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,26 +30,13 @@ class DeviceDetailsPage extends StatelessWidget {
             Text("Name: ${device.name.isEmpty ? "Unknown Device" : device.name}"),
             Text("ID: ${device.id}"),
             Text("RSSI: ${device.rssi}"),
-            const SizedBox(height: 16),
-            Text("Advertising Data:", style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView(
-                children: device.serviceData.entries.map((entry) {
-                  return ListTile(
-                    title: Text("Service UUID: ${entry.key}"),
-                    subtitle: Text("Data: ${entry.value}"),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
+            const Spacer(),
             SafeArea(
               child: Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    disconnectCallback(); // Disconnect the device
-                    Navigator.pop(context); // Go back to the previous page
+                    disconnectCallback();
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
