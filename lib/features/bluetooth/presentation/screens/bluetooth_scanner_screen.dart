@@ -1,6 +1,6 @@
+import 'package:bluetooth_detector/core/locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/dependency_injection.dart';
 import '../bloc/bluetooth_bloc.dart';
 import '../bloc/bluetooth_event.dart';
 import '../bloc/bluetooth_state.dart';
@@ -13,7 +13,7 @@ class BluetoothScannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<BluetoothBloc>(), // Inject BluetoothBloc
+      create: (_) => locator<BluetoothBloc>(), // Inject BluetoothBloc
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Bluetooth Devices"),

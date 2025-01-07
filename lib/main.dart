@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'core/dependency_injection.dart' as di;
+import 'core/locator.dart';
 import 'features/bluetooth/presentation/bloc/bluetooth_bloc.dart';
 import 'features/bluetooth/presentation/screens/bluetooth_scanner_screen.dart';
 
-void main() {
-  di.init(); // Initialize dependency injection
-  runApp(const BluetoothScannerApp());
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await setup(); // Initialize dependencies
 }
 
 class BluetoothScannerApp extends StatelessWidget {
@@ -15,7 +15,7 @@ class BluetoothScannerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => di.sl<BluetoothBloc>(), // Inject BluetoothBloc globally
+      create: (_) => locator<BluetoothBloc>(), // Inject BluetoothBloc globally
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Bluetooth Scanner',
