@@ -1,6 +1,35 @@
 # bluetooth_detector
 
 A new Flutter project.
+lib/
+    |- main.dart
+    |- core/
+    |    |- dependency_injection.dart
+    |- features/
+            |- bluetooth/
+                    |- data/
+                    |    |- models/
+                    |    |    |- bluetooth_device_model.dart
+                    |    |- repositories/
+                    |         |- bluetooth_repository_impl.dart
+                    |- domain/
+                    |    |- entities/
+                    |    |    |- bluetooth_device_entity.dart
+                    |    |- repositories/
+                    |         |- bluetooth_repository.dart
+                    |    |- usecases/
+                    |         |- start_scan_usecase.dart
+                    |         |- stop_scan_usecase.dart
+                    |         |- connect_to_device_usecase.dart
+                    |         |- disconnect_device_usecase.dart
+                    |- presentation/
+                        |- bloc/
+                        |       |- bluetooth_bloc.dart
+                        |       |- bluetooth_event.dart
+                        |       |- bluetooth_state.dart
+                        |- pages/
+                                |- bluetooth_scanner_screen.dart
+                                |- device_detail_page.dart
 
 ## Getting Started
 
