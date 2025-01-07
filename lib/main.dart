@@ -1,12 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-
-import 'bluetooth_scanner_screen.dart';
-import 'device_detail_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'core/dependency_injection.dart' as di;
+import 'features/bluetooth/presentation/bloc/bluetooth_bloc.dart';
+import 'features/bluetooth/presentation/screens/bluetooth_scanner_screen.dart';
 
 void main() {
+  di.init(); // Initialize dependency injection
   runApp(const BluetoothScannerApp());
 }
 
@@ -15,12 +14,16 @@ class BluetoothScannerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Bluetooth Scanner',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const BluetoothScannerScreen(),
+    return BlocProvider(
+      create: (_) => di.sl<BluetoothBloc>(), // Inject BluetoothBloc globally
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Bluetooth Scanner',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: const BluetoothScannerScreen(),
+      ),
     );
   }
 }
-
